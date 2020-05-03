@@ -1,0 +1,171 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app1-cm
+data:
+  service1: srv1
+  service2: srv2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+      - name: app1
+        image: przemekmalak/app1:12
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+          - name: service1
+            valueFrom:
+              configMapKeyRef:
+                name: app1-cm
+                key: service1
+          - name: service2
+            valueFrom:
+              configMapKeyRef:
+                name: app1-cm
+                key: service2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1
+  labels:
+    app: app1
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+  selector:
+    app: app1
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: srv1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: srv1
+  template:
+    metadata:
+      labels:
+        app: srv1
+    spec:
+      containers:
+      - name: srv1
+        image: przemekmalak/srv1:8
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: srv1
+  labels:
+    app: srv1
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+  selector:
+    app: srv1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: srv2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: srv2
+  template:
+    metadata:
+      labels:
+        app: srv2
+    spec:
+      containers:
+      - name: srv2
+        image: przemekmalak/srv2:9
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: srv2
+  labels:
+    app: srv2
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+  selector:
+    app: srv2
+--- 
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-app
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+   - http:
+      paths:
+        - path: /app
+          backend:
+            serviceName: app1
+            servicePort: 5000
+--- 
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-srv1
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+   - http:
+      paths:
+        - path: /srv1
+          backend:
+            serviceName: srv1
+            servicePort: 5000
+--- 
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-srv2
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+   - http:
+      paths:
+        - path: /srv2
+          backend:
+            serviceName: srv2
+            servicePort: 5000
