@@ -1,15 +1,41 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: srv
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app1-cm
+  namespace: srv
 data:
-  service1: srv1
-  service2: srv2
+  service1: srv1.srv.svc.cluster.local
+  service2: srv2.srv.svc.cluster.local
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app1-sa
+  namespace: srv
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: srv1-sa
+  namespace: srv
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: srv2-sa
+  namespace: srv
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app1
+  namespace: srv
 spec:
   replicas: 2
   selector:
@@ -19,7 +45,9 @@ spec:
     metadata:
       labels:
         app: app1
+        id: app
     spec:
+      serviceAccountName: app1-sa
       containers:
       - name: app1
         image: przemekmalak/app1:12
@@ -43,6 +71,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: app1
+  namespace: srv
   labels:
     app: app1
 spec:
@@ -57,6 +86,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: srv1
+  namespace: srv
 spec:
   replicas: 2
   selector:
@@ -66,7 +96,9 @@ spec:
     metadata:
       labels:
         app: srv1
+        id: srv
     spec:
+      serviceAccountName: srv1-sa
       containers:
       - name: srv1
         image: przemekmalak/srv1:8
@@ -79,6 +111,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: srv1
+  namespace: srv
   labels:
     app: srv1
 spec:
@@ -93,6 +126,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: srv2
+  namespace: srv
 spec:
   replicas: 2
   selector:
@@ -102,7 +136,9 @@ spec:
     metadata:
       labels:
         app: srv2
+        id: srv
     spec:
+      serviceAccountName: srv2-sa
       containers:
       - name: srv2
         image: przemekmalak/srv2:9
@@ -115,6 +151,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: srv2
+  namespace: srv
   labels:
     app: srv2
 spec:
@@ -124,48 +161,3 @@ spec:
     name: http
   selector:
     app: srv2
---- 
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-app
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-   - http:
-      paths:
-        - path: /app
-          backend:
-            serviceName: app1
-            servicePort: 5000
---- 
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-srv1
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-   - http:
-      paths:
-        - path: /srv1
-          backend:
-            serviceName: srv1
-            servicePort: 5000
---- 
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: ingress-srv2
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-   - http:
-      paths:
-        - path: /srv2
-          backend:
-            serviceName: srv2
-            servicePort: 5000

@@ -3,7 +3,7 @@
 <br><br>
 <br><br>
 
-# Runninc basic Docker containers
+# Running basic Docker containers
 
 ## LAB Overview
 
