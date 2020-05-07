@@ -12,15 +12,22 @@ consul config write 4_resolver.hsl
 
 for i in 1 2 3 4 5 6 7 8 9 ;do curl 127.0.0.1:5000; echo; done
 
-curl -H 'x-beta: 1' 127.0.0.1:5000
-curl 127.0.0.1:5000
 
-consul config delete -name application -kind service-router
+consul config delete -name application -kind service-resolver
 
 consul write config 5_router.hsl
 
+curl 127.0.0.1:5000
+curl -H 'x-beta: 1' 127.0.0.1:5000
+
+
 for i in 1 2 3 4 5 6 7 8 9 ;do curl 127.0.0.1:5000; echo; done
 
+consul config delete -name application -kind service-router
+
+consul write config 6_splitter.hsl
+
+
 consul config delete -name application -kind service-splitter
-consul config delete -name application -kind service-resolver
+consul config delete -name application -kind service-router
 consul config delete -name application -kind service-defaults
